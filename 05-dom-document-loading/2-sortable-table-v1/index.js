@@ -3,7 +3,15 @@ export default class SortableTable {
     this.headerConfig = headerConfig;
     this.data = data;
     this.element = this.createElement(this.createTemplate());
-    this.subElements = {body: this.element.querySelector('[data-element="body"]')};
+    this.subElements = {};
+    this.getSubElements();
+  }
+
+  getSubElements() {
+    const elements = this.element.querySelectorAll('[data-element]');
+    for (const element of elements) {
+      this.subElements[element.dataset.element] = element;
+    }
   }
 
   createElement(template) {
@@ -23,6 +31,41 @@ export default class SortableTable {
     );
   }
 
+  createTableTemplate() {
+    return (`
+      <div data-element="header" class="sortable-table__header sortable-table__row">
+        ${this.createTableHeader()}
+      </div>
+      <div data-element="body" class="sortable-table__body">
+        ${this.createTableBody()}
+      </div>
+      `
+    );
+  }
+
+  createTableBody() {
+    if (this.data.length === 0) {
+      return this.createTableEmptySection();
+    }
+
+    return this.data.map(item => this.createTableItem(item)).join('');
+  }
+
+  createTableItem(item) {
+    return (`
+      <a href="/products/${item.id}" class="sortable-table__row">
+        ${this.headerConfig.map((config) => {
+        if (config.template) {
+          return config.template(item.images);
+        } else {
+          return `<div class="sortable-table__cell">${item[config.id]}</div>`;
+        }
+      }
+      ).join('')}
+      </a>`
+    );
+  }
+
   createTableHeader() {
     return this.headerConfig?.map((value) => (`
       <div class="sortable-table__cell" data-id="${value.id}" data-sortable="${value.sortable}">
@@ -31,29 +74,14 @@ export default class SortableTable {
     )).join('');
   }
 
-  createTableItem() {
-    return this.data?.map(item => (`
-      <a href="/products/${item.id}" class="sortable-table__row">
-        ${this.headerConfig?.map((header) => {
-          if (header.template) {
-            return header.template(item);
-          } else {
-            return `<div class="sortable-table__cell">${item[header.id]}</div>`
-          }
-        }).join('')}
-      </a>`
-    )).join('')
-  }
-
-  createTableTemplate() {
+  createTableEmptySection() {
     return (`
-      <div data-element="header" class="sortable-table__header sortable-table__row">
-        ${this.createTableHeader()}
-      </div>
-      <div data-element="body" class="sortable-table__body">
-        ${this.createTableItem()}
-      </div>
-      `
+        <div data-element="emptyPlaceholder" class="sortable-table__empty-placeholder">
+          <div>
+            <p>No products satisfies your filter criteria</p>
+            <button type="button" class="button-primary-outline">Reset all filters</button>
+          </div>
+        </div>`
     );
   }
 
@@ -83,4 +111,3 @@ export default class SortableTable {
     this.remove();
   }
 }
-
